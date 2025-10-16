@@ -1,0 +1,10 @@
+practice:
+  hosts:
+    web:
+      ansible_host: 192.168.57.10
+    db:
+      ansible_host: 192.168.57.11
+  vars:
+    ansible_user: vagrant
+    ansible_private_key_file: .vagrant/machines/patata/virtualbox/private_key
+    ansible_python_interpreter: /usr/bin/python3

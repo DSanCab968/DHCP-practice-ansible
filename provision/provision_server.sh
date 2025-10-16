@@ -9,14 +9,14 @@ apt update -y
 #Instalamos el dhcp y las herramientas necesarias
 apt install -y isc-dhcp-server net-tools iproute2
 
-# Interfaz donde escuchará el servicio (la red interna)
+#Interfaz donde escuchará el servicio (la red interna)
 INTERFACE=$(ip -o -4 addr show | awk '/192\.168\.57\./ {print $2}')
 sed -i "s/^INTERFACESv4=.*/INTERFACESv4=\"$INTERFACE\"/" /etc/default/isc-dhcp-server
 
-# Copia de seguridad del archivo de configuración por si es necesaria
+#Copia de seguridad del archivo de configuración por si es necesaria
 cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 
-# Configuración del servicio DHCP
+#Configuración del servicio DHCP
 cat > /etc/dhcp/dhcpd.conf <<EOF
 default-lease-time 86400;
 max-lease-time 691200;
@@ -39,7 +39,7 @@ host c2 {
 }
 EOF
 
-# Reiniciar y habilitar servicio
+#Reiniciar y habilitar servicio
 systemctl restart isc-dhcp-server
 systemctl enable isc-dhcp-server
 

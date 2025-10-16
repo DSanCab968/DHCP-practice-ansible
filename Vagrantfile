@@ -6,15 +6,15 @@ Vagrant.configure("2") do |config|
     #Creación servidor 
     config.vm.define "server" do |server|
     server.vm.hostname = "server"
-    # Adaptador 1: Red privada
+    #Adaptador 1: Red privada
     server.vm.network "private_network", 
                       ip: "192.168.56.10"
-    # Adaptador 2: Red interna (DHCP)
+    #Adaptador 2: Red interna (DHCP)
     server.vm.network "private_network", 
                       ip: "192.168.57.10", 
                       virtualbox__intnet: "intNet1",
                       auto_config: true
-    # Script de configuración (El provision)
+    #Script de configuración (El provision)
     server.vm.provision "shell", 
                         path: "provision/provision_server.sh"
   end
