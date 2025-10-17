@@ -1,6 +1,6 @@
 ---
 - name: Configure Clients DHCP
-  hosts: clientss
+  hosts: clients
   become: true
   tasks:
     - name: Install DHCP client tools
