@@ -1,0 +1,9 @@
+---
+- name: Configure Clients DHCP
+  hosts: clientss
+  become: true
+  tasks:
+    - name: Install DHCP client tools
+      ansible.builtin.apt:
+        name: net-tools iproute2 isc-dhcp-client
+        update_cache: true

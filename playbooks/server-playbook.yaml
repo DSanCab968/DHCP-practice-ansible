@@ -1,0 +1,15 @@
+---
+- name: Configure Server
+  hosts: server
+  become: true
+  tasks:
+    - name: Install DHCP server tools
+      ansible.builtin.apt:
+        name: isc-dhcp-server net-tools iproute2
+        update_cache: true
+    - name: Ensure isc-dhcp-server is running
+      service:
+        name: isc-dhcp-server
+        state: started
+        enabled: yes
+      
