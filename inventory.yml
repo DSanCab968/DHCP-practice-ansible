@@ -1,21 +1,21 @@
 all:
   vars:
     ansible_user: vagrant
-    ansible_private_key_file: .vagrant/machines/patata/virtualbox/private_key
     ansible_python_interpreter: /usr/bin/python3
 
   children:
     server:
-      hosts:
-        s1:
-          ansible_host: 127.0.0.1
-          ansible_port: 2200
+      ansible_host: 127.0.0.1
+      ansible_port: 2200
+      ansible_private_key_file: .vagrant/machines/server/virtualbox/private_key
 
     clients:
       hosts:
         c1:
           ansible_host: 127.0.0.1
           ansible_port: 2201
+          ansible_private_key_file: .vagrant/machines/c1/virtualbox/private_key
         c2:
           ansible_host: 127.0.0.1
           ansible_port: 2202
+          ansible_private_key_file: .vagrant/machines/c2/virtualbox/private_key
