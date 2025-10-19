@@ -1,4 +1,4 @@
-# Practice 12 -- Do the practice DHCP Server Configuration with Ansible
+# Practice 2 -- Do the practice DHCP Server Configuration with Ansible
 
 In this new practice we will repeat the last practice but using Ansible to do the provisions.
 
@@ -10,7 +10,7 @@ In this new practice we will repeat the last practice but using Ansible to do th
 Daniel Sánchez Cabello
 
 **Course/Subject:** 2º ASIR B -- Network Services and Internet\
-**Finish date:** 07/10/2025
+**Finish date:** 19/10/2025
 
 ------------------------------------------------------------------------
 
@@ -404,7 +404,7 @@ Note: when running the playbook against machines running, there may be a error r
 </details>
 
 
-<details><summary>CLient 2 correct fixed address</summary>
+<details><summary>Client 2 correct fixed address</summary>
 
 ```bash
 
