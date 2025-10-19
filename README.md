@@ -16,22 +16,21 @@ Daniel Sánchez Cabello
 
 ## Index
 
-# Table of Contents
+1.  [Vagrantfile Creation and VM's Network Configuration](#1-vagrantfile-creation-and-vms-network-configuration)
+    1.  [Server Creation](#11-server-creation)
+    2.  [Client 1 Creation](#12-client-1-creation)
+    3.  [Client 2 Creation](#13-client-2-creation)
+    4.  [Vagrantfile final result](#14-vagrantfile-final-result)
 
-1. [Vagrantfile Creation and VM's Network Configuration](#1-vagrantfile-creation-and-vms-network-configuration)
-   1.1 [Server Creation](#11-server-creation)
-   1.2 [Client 1 Creation](#12-client-1-creation)
-   1.3 [Client 2 Creation](#13-client-2-creation)
-   1.4 [Vagrantfile creation](#14-vagrantfile-creation)
+2.  [Ansible files configuration](#2-ansible-files-configuration)
+    1.  [Creating Ansible configuration file](#21-creating-ansible-configuration-file)
+    2.  [Creating the inventory](#22-creating-the-inventory)
+    3.  [Creating the playbook](#23-creating-the-playbook)
 
-2. [Ansible files configuration](#2-ansible-files-configuration)
-   2.1 [Creating Ansible configuration file](#21-creating-ansible-configuration-file)
-   2.2 [Creating the inventory](#22-creating-the-inventory)
-   2.3 [Creating the playbook](#23-creating-the-playbook)
+3.  [Verification](#3-verification)
+    1.  [Deploy of the playbook](#31-deploy-of-the-playbook)
+    2.  [Verifying addresses](#32-verifying-addresses)
 
-3. [Verification](#3-verification)
-   3.1 [Deploy of the playbook](#31-deploy-of-the-playbook)
-   3.2 [Verifying addresses](#32-verifying-addresses)
 
 
 ------------------------------------------------------------------------
@@ -82,7 +81,7 @@ Add the path for the provision too (it is the same for c1 and c2).
 
 ------------------------------------------------------------------------
 
-### 1.4 Vagrantfile creation
+### 1.4 Vagrantfile final result
 
 Now, lets create the whole vagrantfile. Wecan add the provision with ansible to the vagrantfile directly so it will be used when we set up th machines with `vagrant up` or we can provision the machines later (when they are running) using the command `ansible-playbook [-i inventoryname.yml] [playbookname.yml]`. If we already have the default playbook in the configuration file, it is not necessary to write it in the previous command, do this instead: `ansible-playbook [playbookname.yml]`
 
