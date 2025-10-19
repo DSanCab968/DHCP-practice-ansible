@@ -1,0 +1,82 @@
+---
+- name: Configure DHCP Server
+  hosts: server
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install DHCP server tools
+      ansible.builtin.apt:
+        name:
+          - isc-dhcp-server
+          - net-tools
+          - iproute2
+        state: present
+
+    - name: Configure DHCP server interface
+      ansible.builtin.lineinfile:
+        path: /etc/default/isc-dhcp-server
+        regexp: "^INTERFACESv4="
+        line: 'INTERFACESv4="eth2"'
+
+    - name: Deploy DHCP configuration
+      ansible.builtin.copy:
+        dest: /etc/dhcp/dhcpd.conf
+        owner: root
+        group: root
+        mode: "0600" # permiso mas seguro porque ansible-lint lo califica como risky
+        content: |
+          default-lease-time 86400;
+          max-lease-time 691200;
+          authoritative;
+
+          subnet 192.168.57.0 netmask 255.255.255.0 {
+            range 192.168.57.25 192.168.57.50;
+            option routers 192.168.57.10;
+            option broadcast-address 192.168.57.255;
+            option domain-name-servers 8.8.8.8, 4.4.4.4;
+            option domain-name "micasa.es";
+          }
+
+          host c2 {
+            hardware ethernet 08:00:27:aa:bb:cc;
+            fixed-address 192.168.57.4;
+            option domain-name-servers 1.1.1.1;
+            default-lease-time 3600;
+          }
+
+    - name: Restart DHCP server
+      ansible.builtin.service:
+        name: isc-dhcp-server
+        state: restarted
+        enabled: true
+
+- name: Configure DHCP Clients
+  hosts: clients
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install DHCP client tools
+      ansible.builtin.apt:
+        name:
+          - net-tools
+          - iproute2
+          - isc-dhcp-client
+        state: present
+
+    - name: Request DHCP lease
+      ansible.builtin.command: dhclient -v
+      register: dhclient_result
+      changed_when: false
+      failed_when: false
+
+    - name: Show IP addresses
+      ansible.builtin.command: ip a
+      register: ip_result
+      changed_when: false
+      failed_when: false

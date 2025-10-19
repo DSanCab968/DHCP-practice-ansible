@@ -1,17 +1,13 @@
-# Practice 1 -- DHCP Server Configuration
+# Practice 12 -- Do the practice DHCP Server Configuration with Ansible
 
-In this practice we will create a DHCP server and two clients using
-Vagrant.\
-The objective is that the clients will obtain the IP configuration
-automatically from the server.
+In this new practice we will repeat the last practice but using Ansible to do the provisions.
 
 ![Esquema proyecto](Images/esquemaObjeto.png)
 
 ------------------------------------------------------------------------
 
-**Authors:**\
-Daniel Sánchez Cabello\
-Pablo Corral Romera
+**Author:**\
+Daniel Sánchez Cabello
 
 **Course/Subject:** 2º ASIR B -- Network Services and Internet\
 **Finish date:** 07/10/2025
@@ -20,19 +16,23 @@ Pablo Corral Romera
 
 ## Index
 
-1.  [Vagrantfile creation and VM's network
-    configuration](#1-vagrantfile-creation-and-vms-network-configuration)
-    1.  [Server creation](#11-server-creation)
-    2.  [Client 1 creation](#12-client-1-creation)
-    3.  [Client 2 creation](#13-client-2-creation)
-2.  [Provision files](#2-provision-files)
-    1.  [Provision for the server](#21-provision-for-the-server)
-    2.  [Provision for the clients](#22-provision-for-the-clients)
-3.  [Execution of the Vagrantfile and network
-    checks](#3-execution-of-the-vagrantfile-and-network-checks)
-    1.  [Execution of the
-        Vagrantfile](#31-execution-of-the-vagrantfile)
-    2.  [Network check](#32-network-check)
+# Table of Contents
+
+1. [Vagrantfile Creation and VM's Network Configuration](#1-vagrantfile-creation-and-vms-network-configuration)
+   1.1 [Server Creation](#11-server-creation)
+   1.2 [Client 1 Creation](#12-client-1-creation)
+   1.3 [Client 2 Creation](#13-client-2-creation)
+   1.4 [Vagrantfile creation](#14-vagrantfile-creation)
+
+2. [Ansible files configuration](#2-ansible-files-configuration)
+   2.1 [Creating Ansible configuration file](#21-creating-ansible-configuration-file)
+   2.2 [Creating the inventory](#22-creating-the-inventory)
+   2.3 [Creating the playbook](#23-creating-the-playbook)
+
+3. [Verification](#3-verification)
+   3.1 [Deploy of the playbook](#31-deploy-of-the-playbook)
+   3.2 [Verifying addresses](#32-verifying-addresses)
+
 
 ------------------------------------------------------------------------
 
@@ -82,215 +82,346 @@ Add the path for the provision too (it is the same for c1 and c2).
 
 ------------------------------------------------------------------------
 
-## 2. Provision Files
+### 1.4 Vagrantfile creation
 
-### 2.1 Provision for the Server
+Now, lets create the whole vagrantfile. Wecan add the provision with ansible to the vagrantfile directly so it will be used when we set up th machines with `vagrant up` or we can provision the machines later (when they are running) using the command `ansible-playbook [-i inventoryname.yml] [playbookname.yml]`. If we already have the default playbook in the configuration file, it is not necessary to write it in the previous command, do this instead: `ansible-playbook [playbookname.yml]`
 
-File: `provision_server.sh`
+<details><summary>Vagrantfile with provision</summary>
 
-``` bash
-#!/bin/bash
+```ruby
 
-# Paramos si falla algun comando para verlo
-set -e
-
-# Mensaje por pantalla y parametro -y para evitar necesidad de confirmacion
-echo "Instalando servidor DHCP..."
-apt update -y
-# Instalamos el dhcp y las herramientas necesarias
-apt install -y isc-dhcp-server net-tools iproute2
-
-# Interfaz donde escuchará el servicio (la red interna)
-#Obtener el nombre de la interfaz (Mostrar las interfaces)
-INTERFACE=$(ip -o -4 addr show | awk '/192\.168\.57\./ {print $2}')
-#Modifica el servicio DHCP donde añade a la configuración el valor de $INTERFACE
-sed -i "s/^INTERFACESv4=.*/INTERFACESv4=\"$INTERFACE\"/" /etc/default/isc-dhcp-server
-
-# Copia de seguridad del archivo de configuración por si es necesaria
-cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
-
-# Configuración del servicio DHCP
-cat > /etc/dhcp/dhcpd.conf <<EOF
-default-lease-time 86400;
-max-lease-time 691200;
-authoritative;
-
-subnet 192.168.57.0 netmask 255.255.255.0 {
-  range 192.168.57.25 192.168.57.50;
-  option routers 192.168.57.10;
-  option broadcast-address 192.168.57.255;
-  option domain-name-servers 8.8.8.8, 4.4.4.4;
-  option domain-name "micasa.es";
-}
-
-# Cliente c2 - IP fija por MAC
-host c2 {
-  hardware ethernet 08:00:27:aa:bb:cc;
-  fixed-address 192.168.57.31;
-  option domain-name-servers 1.1.1.1;
-  default-lease-time 3600;
-}
-EOF
-
-# Reiniciar y habilitar servicio
-systemctl restart isc-dhcp-server
-systemctl enable isc-dhcp-server
-
-# Comprobamos estado del servicio y evitamos salida paginada para automatizar
-echo "Comprobando estado del servicio..."
-systemctl status isc-dhcp-server --no-pager
-```
-
-------------------------------------------------------------------------
-
-### 2.2 Provision for the Clients
-
-File: `provision_client.sh`
-
-``` bash
-#!/bin/bash
-# Detenemos la ejecución si falla algún comando
-set -e
-
-# Actualizamos e instalamos el cliente DHCP y las herramientas de red
-apt update -y
-apt install -y net-tools iproute2 isc-dhcp-client
-
-# Mostramos mensaje de que todo ha ido bien y verificamos la configuración IP
-echo "Configuración de cliente lista."
-dhclient -v
-ip a
-```
-
-------------------------------------------------------------------------
-
-## 3. Execution of the Vagrantfile and Network Checks
-
-### 3.1 Execution of the Vagrantfile
-
-Once everything (Vagrantfile and provisions) is ready, use the command:
-
-``` bash
-vagrant up
-```
-
-to create the VMs with the configuration we established.
-
-Be aware of possible errors in the command line.\
-If there are no errors, we can continue to the next step.
-
-------------------------------------------------------------------------
-
-### 3.2 Network Check
-
-Connect via SSH to the three VMs and use `ip a` to verify that all the
-IPs are correct.
-
-First, check the IP of **server** and the connectivity with our physical
-machine and with the two clients:
-
-``` bash
-vagrant ssh server
-ip a
-```
-
-Use `logout` to exit the machine and do the same in **c1** and **c2**.
-
-------------------------------------------------------------------------
-
-#### Ping Tests
-
--   Server to physical machine\
--   Server to c1 and c2\
--   c1 to c2\
--   c1 to Google\
--   Physical machine to server and c2 (the c2 ping should fail)
-
-Example outputs:
-
-``` bash
-vagrant@c1:~$ ping -c 5 8.8.8.8
-5 packets transmitted, 5 received, 0% packet loss, time 4674ms
-rtt min/avg/max/mdev = 17.999/52.489/118.158/42.324 ms
-```
-
-``` bash
-vagrant@c1:~$ ping -c 3 192.168.57.31
-3 packets transmitted, 3 received, 0% packet loss
-rtt min/avg/max/mdev = 0.359/0.401/0.437/0.032 ms
-```
-
-``` bash
-vagrant@server:~$ ping -c 3 192.168.57.25
-3 packets transmitted, 3 received, 0% packet loss
-rtt min/avg/max/mdev = 0.262/0.291/0.316/0.022 ms
-```
-
-``` bash
-vagrant@server:~$ ping -c 3 192.168.57.31
-3 packets transmitted, 3 received, 0% packet loss
-rtt min/avg/max/mdev = 0.299/0.315/0.326/0.011 ms
-```
-
-------------------------------------------------------------------------
-
-### Vagrantfile 
-
-``` ruby
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/bullseye64"
 
-  # Server
-  config.vm.define "server" do |server|
+    #Creación servidor 
+    config.vm.define "server" do |server|
     server.vm.hostname = "server"
-    # Adapter 1: Private network
-    server.vm.network "private_network", ip: "192.168.56.10"
-    # Adapter 2: Internal network (DHCP)
-    server.vm.network "private_network",
-      ip: "192.168.57.10",
-      virtualbox__intnet: "intNet1",
-      auto_config: true
-    # Provision script
-    server.vm.provision "shell", path: "provision/provision_server.sh"
+    #Adaptador 1: Red privada
+    server.vm.network "private_network", 
+                      ip: "192.168.56.10"
+    #Adaptador 2: Red interna (DHCP)
+    server.vm.network "private_network", 
+                      ip: "192.168.57.10", 
+                      virtualbox__intnet: "intNet1",
+                      auto_config: true
+    #Provision con ansible
+    server.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.inventory_path = "inventory.yml"
+    end
   end
 
-  # Client 1
+
+  #Cliente 1
   config.vm.define "c1" do |c1|
     c1.vm.hostname = "c1"
     c1.vm.network "private_network",
-      virtualbox__intnet: "intNet1",
-      type: "dhcp"
-    c1.vm.provision "shell", path: "provision/provision_client.sh"
+                  virtualbox__intnet: "intNet1",
+                  type: "dhcp"
+    c1.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.inventory_path = "inventory.yml"
+    end
   end
 
-  # Client 2
+  #Cliente 2
   config.vm.define "c2" do |c2|
     c2.vm.hostname = "c2"
     c2.vm.network "private_network",
-      mac: "080027AABBCC", # Fixed MAC address
-      virtualbox__intnet: "intNet1",
-      type: "dhcp"
-    c2.vm.provision "shell", path: "provision/provision_client.sh"
+                  mac: "080027AABBCC",
+                  virtualbox__intnet: "intNet1",
+                  type: "dhcp"
+    c2.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.inventory_path = "inventory.yml"
+    end
   end
 end
+
+```
+</details>
+
+## 2. Ansible files configuration
+
+This time we will do the provision using Ansible wich is a tool that allow us to provision in a more sofisticated and professional way. Instead of using scripts, we can make an inventory of machines adn run a playbook with tasks against the items of that inventory.
+
+------------------------------------------------------------------------
+
+### 2.1 Creating Ansible configuration file 
+
+Here we must include the general configuration for Ansible. For example we can set the path for the inventory that will be used for all the playbooks, so the we do not need to specificate. If we had different inventories, then we should not include any of the here. Also we can set the remote user and other parameters.
+
+File: `ansible.cfg`
+
+``` ini
+  [defaults]
+  inventory = ./inventory.yml
+  remote_user = vagrant
+  host_key_checking = False
+  interpreter_python = auto_silent
+  deprecation_warnings=False
+
 ```
 
 ------------------------------------------------------------------------
 
-### Example `ip a` Outputs
+### 2.2 Creating the inventory
 
-``` bash
-3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
-link/ether 08:00:27:9e:bb:85 brd ff:ff:ff:ff:ff:ff
-inet 192.168.57.25/24 brd 192.168.57.255 scope global dynamic eth1
-inet6 fe80::a00:27ff:fe9e:bb85/64 scope link
-valid_lft forever preferred_lft forever
+The inventory is used to have an organized list of the machines we will have and their general connection details, such as the IP, port, or key. We could have used Vagrant’s generic key for all the machines and included it under the vars section, where general parameters are set, but in this case, I assigned each machine the path to the key stored in its own files.
+
+File: `inventory.yml`
+
+``` yml
+  all:
+    vars:
+      ansible_user: vagrant
+      ansible_python_interpreter: /usr/bin/python3
+
+    children:
+      servers:
+        hosts:
+          server:
+            ansible_host: 127.0.0.1
+            ansible_port: 2222
+            ansible_private_key_file: .vagrant/machines/server/virtualbox/private_key
+
+      clients:
+        hosts:
+          c1:
+            ansible_host: 127.0.0.1
+            ansible_port: 2200
+            ansible_private_key_file: .vagrant/machines/c1/virtualbox/private_key
+          c2:
+            ansible_host: 127.0.0.1
+            ansible_port: 2201
+            ansible_private_key_file: .vagrant/machines/c2/virtualbox/private_key
 ```
 
 ------------------------------------------------------------------------
 
-**End of Document**\
-© Daniel Sánchez Cabello & Pablo Corral Romera
+### 2.3 Creating the playbook
+
+First, connect via SSH to the three VMs and use `ip a` to chech the network adapter used for communication and the use the command `vagrant ssh-config` para ver los puertos de cada máquina. Esto es muy importante a la hora de crear el playbook.
+
+We will do a series of tasks to install the dhcp tools, set the subnets configuration and check that everything is alright. The first group of tasks will be run on the server and the second in the clients. Here in the playbook, we run the tasks aiming the groups created on the inventory.
+
+File: `playbook.yml`
+
+```yml
+
+---
+- name: Configure DHCP Server
+  hosts: server
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install DHCP server tools
+      ansible.builtin.apt:
+        name:
+          - isc-dhcp-server
+          - net-tools
+          - iproute2
+        state: present
+
+    - name: Configure DHCP server interface
+      ansible.builtin.lineinfile:
+        path: /etc/default/isc-dhcp-server
+        regexp: "^INTERFACESv4="
+        line: 'INTERFACESv4="eth2"'
+
+    - name: Deploy DHCP configuration
+      ansible.builtin.copy:
+        dest: /etc/dhcp/dhcpd.conf
+        owner: root
+        group: root
+        mode: "0600" 
+        content: |
+          default-lease-time 86400;
+          max-lease-time 691200;
+          authoritative;
+
+          subnet 192.168.57.0 netmask 255.255.255.0 {
+            range 192.168.57.25 192.168.57.50;
+            option routers 192.168.57.10;
+            option broadcast-address 192.168.57.255;
+            option domain-name-servers 8.8.8.8, 4.4.4.4;
+            option domain-name "micasa.es";
+          }
+
+          host c2 {
+            hardware ethernet 08:00:27:aa:bb:cc;
+            fixed-address 192.168.57.4;
+            option domain-name-servers 1.1.1.1;
+            default-lease-time 3600;
+          }
+
+    - name: Restart DHCP server
+      ansible.builtin.service:
+        name: isc-dhcp-server
+        state: restarted
+        enabled: true
+
+- name: Configure DHCP Clients
+  hosts: clients
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install DHCP client tools
+      ansible.builtin.apt:
+        name:
+          - net-tools
+          - iproute2
+          - isc-dhcp-client
+        state: present
+
+    - name: Request DHCP lease
+      ansible.builtin.command: dhclient -v
+      register: dhclient_result
+      changed_when: false
+      failed_when: false
+
+    - name: Show IP addresses
+      ansible.builtin.command: ip a
+      register: ip_result
+      changed_when: false
+      failed_when: false
+
+```
+
+------------------------------------------------------------------------
+
+## 3. Verification
+
+### 3.1 Deploy of the playbook
+
+Note: when running the playbook against machines running, there may be a error related to the time, if that occurs, reload and provision again the mchine.
+
+<details><summary>Console output of the playbook after run</summary>
+
+```bash
+
+  PLAY [Configure DHCP Server] **********************************************************************************************************************************************************************
+
+  TASK [Gathering Facts] ****************************************************************************************************************************************************************************
+  ok: [server]
+
+  TASK [Update apt cache] ***************************************************************************************************************************************************************************
+  ok: [server]
+
+  TASK [Install DHCP server tools] ******************************************************************************************************************************************************************
+  ok: [server]
+
+  TASK [Configure DHCP server interface] ************************************************************************************************************************************************************
+  changed: [server]
+
+  TASK [Deploy DHCP configuration] ******************************************************************************************************************************************************************
+  ok: [server]
+
+  TASK [Restart DHCP server] ************************************************************************************************************************************************************************
+  changed: [server]
+
+  PLAY [Configure DHCP Clients] *********************************************************************************************************************************************************************
+
+  TASK [Gathering Facts] ****************************************************************************************************************************************************************************
+  ok: [c2]
+  ok: [c1]
+
+  TASK [Update apt cache] ***************************************************************************************************************************************************************************
+  changed: [c1]
+  changed: [c2]
+
+  TASK [Install DHCP client tools] ******************************************************************************************************************************************************************
+  changed: [c1]
+  changed: [c2]
+
+  TASK [Request DHCP lease] *************************************************************************************************************************************************************************
+  ok: [c1]
+  ok: [c2]
+
+  TASK [Show IP addresses] **************************************************************************************************************************************************************************
+  ok: [c1]
+  ok: [c2]
+
+  PLAY RECAP ****************************************************************************************************************************************************************************************
+  c1                         : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+  c2                         : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+  server                     : ok=6    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+</details>
+
+### 3.2 Verifiying addresses
+
+<details><summary>Server addresses</summary>
+
+```bash
+
+  3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+      link/ether 08:00:27:af:78:90 brd ff:ff:ff:ff:ff:ff
+      altname enp0s8
+      inet 192.168.56.10/24 brd 192.168.56.255 scope global eth1
+        valid_lft forever preferred_lft forever
+      inet6 fe80::a00:27ff:feaf:7890/64 scope link 
+        valid_lft forever preferred_lft forever
+  4: eth2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+      link/ether 08:00:27:00:79:0d brd ff:ff:ff:ff:ff:ff
+      altname enp0s9
+      inet 192.168.57.10/24 brd 192.168.57.255 scope global eth2
+        valid_lft forever preferred_lft forever
+      inet6 fe80::a00:27ff:fe00:790d/64 scope link 
+        valid_lft forever preferred_lft forever
+
+```
+
+
+</details>
+
+
+<details><summary>Client 1 correct dynamic address</summary>
+
+```bash
+
+  3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+      link/ether 08:00:27:61:d0:d5 brd ff:ff:ff:ff:ff:ff
+      altname enp0s8
+      inet 192.168.57.25/24 brd 192.168.57.255 scope global dynamic eth1
+        valid_lft 82929sec preferred_lft 82929sec
+      inet 192.168.57.26/24 brd 192.168.57.255 scope global secondary dynamic eth1
+        valid_lft 83012sec preferred_lft 83012sec
+      inet6 fe80::a00:27ff:fe61:d0d5/64 scope link 
+        valid_lft forever preferred_lft forever
+
+```
+
+
+</details>
+
+
+<details><summary>CLient 2 correct fixed address</summary>
+
+```bash
+
+  3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+      link/ether 08:00:27:aa:bb:cc brd ff:ff:ff:ff:ff:ff
+      altname enp0s8
+      inet 192.168.57.4/24 brd 192.168.57.255 scope global dynamic eth1
+        valid_lft 3571sec preferred_lft 3571sec
+      inet6 fe80::a00:27ff:feaa:bbcc/64 scope link 
+        valid_lft forever preferred_lft forever
+
+```
+
+
+</details>
+
+------------------------------------------------------------------------
+
+© Daniel Sánchez Cabello

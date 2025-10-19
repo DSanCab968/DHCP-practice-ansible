@@ -16,7 +16,7 @@ Vagrant.configure("2") do |config|
                       auto_config: true
     #Provision con ansible
     server.vm.provision "ansible" do |ansible|
-      ansible.playbook = "playbooks/server-playbook.yml"
+      ansible.playbook = "playbook.yml"
       ansible.inventory_path = "inventory.yml"
     end
   end
@@ -29,7 +29,7 @@ Vagrant.configure("2") do |config|
                   virtualbox__intnet: "intNet1",
                   type: "dhcp"
     c1.vm.provision "ansible" do |ansible|
-      ansible.playbook = "playbooks/client-playbook.yml"
+      ansible.playbook = "playbook.yml"
       ansible.inventory_path = "inventory.yml"
     end
   end
@@ -42,7 +42,7 @@ Vagrant.configure("2") do |config|
                   virtualbox__intnet: "intNet1",
                   type: "dhcp"
     c2.vm.provision "ansible" do |ansible|
-      ansible.playbook = "playbooks/client-playbook.yml"
+      ansible.playbook = "playbook.yml"
       ansible.inventory_path = "inventory.yml"
     end
   end

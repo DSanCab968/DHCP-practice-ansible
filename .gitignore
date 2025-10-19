@@ -2,8 +2,11 @@
 *~
 *.bak
 
-#Ignore vagrant dir
+#Ignore dirs
 .vagrant/
+.ansible/
+Images/
+provision/
 
 #Ignore logs
 **/*.log
